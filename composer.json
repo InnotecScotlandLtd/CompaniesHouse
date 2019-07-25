@@ -1,0 +1,39 @@
+{
+    "name": "innotecscotlandltd/companies-house",
+    "description": "Package which can allow API usage of Companies House.",
+    "homepage": "https://innotec.co.uk",
+    "authors": [
+        {
+            "name": "Shabbir Bharmal",
+            "email": "shabbir@innotec.co.uk"
+        }
+    ],
+    "require": {
+        "php": "^7.1.8 || ^8.0",
+        "illuminate/support": "^5.8.0",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "InnotecScotlandLtd\\CompaniesHouse\\": "src/CompaniesHouse/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "process-timeout": 0,
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "InnotecScotlandLtd\\CompaniesHouse\\Providers\\CompaniesHouseServiceProvider"
+            ]
+        }
+    },
+    "require-dev": {
+    }
+}
