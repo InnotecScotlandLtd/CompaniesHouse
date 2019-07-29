@@ -95,7 +95,7 @@ class CompaniesHouseService
             'Accept: application/xhtml+xml',
             'Authorization: Basic '.base64_encode(env('COMPANIES_HOUSE_API_KEY')),
         ];
-        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT_API').'/document/'.$id.'/content';
+        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/document/'.$id.'/content';
         $ch = $this->curl->initiateCurl($url, [], $headers);
         $response = $this->curl->executeCurl($ch);
 
