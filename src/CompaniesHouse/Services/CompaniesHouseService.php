@@ -89,13 +89,14 @@ class CompaniesHouseService
         return null;
     }
 
-    public function getCompanyAssets($id)
+    public function getCompanyAssets($id, $company_id)
     {
         $headers = [
             'Accept: application/xhtml+xml',
             'Authorization: Basic '.base64_encode(env('COMPANIES_HOUSE_API_KEY')),
         ];
-        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/document/'.$id.'/content';
+//        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/document/'.$id.'/content';
+        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/company/'.$company_id.'/filing-history/'.$id.'/document';
         $ch = $this->curl->initiateCurl($url, [], $headers);
         $response = $this->curl->executeCurl($ch);
 
