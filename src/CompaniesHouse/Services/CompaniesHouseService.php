@@ -95,10 +95,14 @@ class CompaniesHouseService
             'Accept: application/xhtml+xml',
             'Authorization: Basic '.base64_encode(env('COMPANIES_HOUSE_API_KEY')),
         ];
-//        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/document/'.$id.'/content';
-        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/company/'.$company_id.'/filing-history/'.$id.'/document';
+        $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/company/'.$company_id.'/filing-history/'.$id.'/document?format=xhtml';
         $ch = $this->curl->initiateCurl($url, [], $headers);
         $response = $this->curl->executeCurl($ch);
+        if (!empty($response) && stripos($response, '<?xml') === false) {
+            $url = config('companiesHouse.COMPANIES_HOUSE_DOCUMENT').'/document/'.$id.'/content';
+            $ch = $this->curl->initiateCurl($url, [], $headers);
+            $response = $this->curl->executeCurl($ch);
+        }
 
         $fixed_asset = 0;
         $current_asset = 0;
