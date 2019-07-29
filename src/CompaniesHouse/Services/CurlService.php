@@ -20,7 +20,7 @@ class CurlService
             CURLOPT_HEADER => 0,
             CURLOPT_URL => $url,
             CURLOPT_POST => (!empty($type) && $type == 'POST') ? true : false,
-            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_ENCODING => '',
             CURLOPT_TIMEOUT => 30000,
             CURLOPT_POSTFIELDS => $data,
