@@ -140,5 +140,14 @@ class CompaniesHouseService
         return ['fixed_asset' => $fixed_asset, 'current_asset' => $current_asset, 'liabilities' => $liabilities];
     }
 
+    public function getOfficers($companyNumber)
+    {
+        $url = config('companiesHouse.COMPANIES_HOUSE_API').'/company/'.$companyNumber.'/officers';
+        $ch = $this->curl->initiateCurl($url, [], $this->headers);
+        $response = $this->curl->executeCurl($ch);
 
+        $this->curl->closeCurl($ch);
+
+        return json_decode($response);
+    }
 }
