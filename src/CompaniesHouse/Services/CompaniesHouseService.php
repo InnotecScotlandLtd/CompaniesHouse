@@ -151,17 +151,14 @@ class CompaniesHouseService
             $assets = $xpath->query('//ix:nonFraction[@contextRef="'.$refName.'"]');
 
             foreach ($assets as $asset) {
-                foreach ($asset->attributes as $attribute) {
-                    if ($attribute->name == 'name') {
-                        if (strpos($attribute->value, ':FixedAssets') !== false && $fixed_asset === 0) {
-                            $fixed_asset = $asset->nodeValue;
-                        } elseif (strpos($attribute->value, ':CurrentAssets') !== false && $current_asset === 0) {
-                            $current_asset = $asset->nodeValue;
-                        } elseif (strpos($attribute->value, ':NetCurrentAssetsLiabilities') !== false
-                            && $liabilities === 0) {
-                            $liabilities = $asset->nodeValue;
-                        }
-                    }
+                $name = $asset->getAttribute('name');
+
+                if (strpos($name, ':FixedAssets') !== false && $fixed_asset === 0) {
+                    $fixed_asset = $this->getAssetValue($asset);
+                } elseif (strpos($name, ':CurrentAssets') !== false && $current_asset === 0) {
+                    $current_asset = $this->getAssetValue($asset);
+                } elseif (strpos($name, ':NetCurrentAssetsLiabilities') !== false && $liabilities === 0) {
+                    $liabilities = $this->getAssetValue($asset);
                 }
             }
 
@@ -185,5 +182,16 @@ class CompaniesHouseService
         $this->curl->closeCurl($ch);
 
         return json_decode($response);
+    }
+
+    public function getAssetValue($asset)
+    {
+        $value = floatval(str_replace(',', '', $asset->nodeValue));
+
+        if ($asset->hasAttribute('sign') && $asset->getAttribute('sign') == '-') {
+            $value = $value * (-1);
+        }
+
+        return $value;
     }
 }
