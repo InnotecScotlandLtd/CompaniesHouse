@@ -108,36 +108,56 @@ class CompaniesHouseService
         $current_asset = 0;
         $liabilities = 0;
         $response = trim($response);
+        $date = null;
 
         if (!empty($response) && stripos($response, '<?xml') !== false) {
             $dom = new \DOMDocument();
             $dom->preserveWhiteSpace = false;
             $dom->formatOutput = true;
             $dom->loadXML($response);
-            $assets = $dom->getElementsByTagName('td');
 
-            if (!empty($assets)) {
-                foreach ($assets as $asset) {
-                    foreach ($asset->childNodes as $item) {
-                        if (!empty($item->attributes)) {
-                            $name = $item->getAttribute('name');
-                            if ($name === 'ns5:FixedAssets' && $fixed_asset === 0) {
-                                $fixed_asset = $asset->nodeValue;
-                            }
-                            if ($name === 'ns5:CurrentAssets' && $current_asset === 0) {
-                                $current_asset = $asset->nodeValue;
-                            }
-                            if ($name === 'ns5:NetAssetsLiabilities' && $liabilities === 0) {
-                                $liabilities = str_replace(['(', ')'], ['', ''], $asset->nodeValue);
-                            }
+            $xpath = new \DOMXPath($dom);
+
+            $xpath->registerNamespace("xbrli", "http://www.xbrl.org/2003/instance");
+
+            $nodelist = $xpath->query("//xbrli:context[@id=\"CURRENT_FY_START\"]");
+
+            foreach ($nodelist as $node){
+                foreach ($node->childNodes as $childNode) {
+                    if ($childNode->nodeName == 'xbrli:period') {
+                        $date = $childNode->nodeValue;
+
+                        break;
+                    }
+                }
+            }
+
+            $assets = $xpath->query('//ix:nonFraction[@contextRef="PREVIOUS_FY_END"]');
+
+            foreach ($assets as $asset) {
+                foreach ($asset->attributes as $attribute) {
+                    if ($attribute->name == 'name') {
+                        if (strpos($attribute->value, ':FixedAssets') !== false && $fixed_asset === 0) {
+                            $fixed_asset = $asset->nodeValue;
+                        } elseif (strpos($attribute->value, ':CurrentAssets') !== false && $current_asset === 0) {
+                            $current_asset = $asset->nodeValue;
+                        } elseif (strpos($attribute->value, ':NetCurrentAssetsLiabilities') !== false
+                            && $liabilities === 0) {
+                            $liabilities = str_replace(['(', ')'], ['', ''], $asset->nodeValue);
                         }
                     }
                 }
             }
+
             $this->curl->closeCurl($ch);
         }
 
-        return ['fixed_asset' => $fixed_asset, 'current_asset' => $current_asset, 'liabilities' => $liabilities];
+        return [
+            'fixed_asset'   => $fixed_asset,
+            'current_asset' => $current_asset,
+            'liabilities'   => $liabilities,
+            'date'          => $date,
+        ];
     }
 
     public function getOfficers($companyNumber)
