@@ -109,6 +109,7 @@ class CompaniesHouseService
         $liabilities = 0;
         $response = trim($response);
         $date = null;
+        $refName = '';
 
         if (!empty($response) && stripos($response, '<?xml') !== false) {
             $dom = new \DOMDocument();
@@ -120,19 +121,34 @@ class CompaniesHouseService
 
             $xpath->registerNamespace("xbrli", "http://www.xbrl.org/2003/instance");
 
-            $nodelist = $xpath->query("//xbrli:context[@id=\"CURRENT_FY_START\"]");
+            $header = $xpath->query('//ix:header//ix:hidden');
 
-            foreach ($nodelist as $node){
-                foreach ($node->childNodes as $childNode) {
-                    if ($childNode->nodeName == 'xbrli:period') {
-                        $date = $childNode->nodeValue;
+            foreach ($header as $nodeList) {
+                foreach ($nodeList->childNodes as $childNode) {
+                    if ($date) break;
 
-                        break;
+                    foreach ($childNode->attributes as $attribute) {
+                        if ($attribute->nodeName == 'contextRef') {
+                            $refName = $attribute->nodeValue;
+                        }
+
+                        if ($attribute->nodeName == 'name' 
+                            && strpos($attribute->nodeValue, ':EndDateForPeriodCoveredByReport') !== false) {
+                            $date = $childNode->nodeValue;
+
+                            break;
+                        }
                     }
                 }
             }
 
-            $assets = $xpath->query('//ix:nonFraction[@contextRef="PREVIOUS_FY_END"]');
+            $nodeList = $xpath->query('//xbrli:context[@id="'.$refName.'"]//xbrli:instant');
+
+            foreach ($nodeList as $item) {
+                $date = $item->nodeValue;
+            }
+
+            $assets = $xpath->query('//ix:nonFraction[@contextRef="'.$refName.'"]');
 
             foreach ($assets as $asset) {
                 foreach ($asset->attributes as $attribute) {
@@ -143,7 +159,7 @@ class CompaniesHouseService
                             $current_asset = $asset->nodeValue;
                         } elseif (strpos($attribute->value, ':NetCurrentAssetsLiabilities') !== false
                             && $liabilities === 0) {
-                            $liabilities = str_replace(['(', ')'], ['', ''], $asset->nodeValue);
+                            $liabilities = $asset->nodeValue;
                         }
                     }
                 }
