@@ -162,6 +162,22 @@ class CompaniesHouseService
                 }
             }
 
+            if ($fixed_asset === 0 && $current_asset === 0 && $liabilities === 0) {
+                $assets = $xpath->query('//ix:nonFraction');
+
+                foreach ($assets as $asset) {
+                    $name = $asset->getAttribute('name');
+
+                    if (strpos($name, ':FixedAssets') !== false && $fixed_asset === 0) {
+                        $fixed_asset = $this->getAssetValue($asset);
+                    } elseif (strpos($name, ':CurrentAssets') !== false && $current_asset === 0) {
+                        $current_asset = $this->getAssetValue($asset);
+                    } elseif (strpos($name, ':NetCurrentAssetsLiabilities') !== false && $liabilities === 0) {
+                        $liabilities = $this->getAssetValue($asset);
+                    }
+                }
+            }
+
             $this->curl->closeCurl($ch);
         }
 
