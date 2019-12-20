@@ -111,59 +111,45 @@ class CompaniesHouseService
         $date = null;
         $refName = '';
 
-        if (!empty($response) && stripos($response, '<?xml') !== false) {
-            $dom = new \DOMDocument();
-            $dom->preserveWhiteSpace = false;
-            $dom->formatOutput = true;
-            $dom->loadXML($response);
+        try {
+            if (!empty($response) && stripos($response, '<?xml') !== false) {
+                $dom = new \DOMDocument();
+                $dom->preserveWhiteSpace = false;
+                $dom->formatOutput = true;
+                $dom->loadXML($response);
 
-            $xpath = new \DOMXPath($dom);
+                $xpath = new \DOMXPath($dom);
 
-            $xpath->registerNamespace("xbrli", "http://www.xbrl.org/2003/instance");
+                $xpath->registerNamespace("xbrli", "http://www.xbrl.org/2003/instance");
 
-            $header = $xpath->query('//ix:header//ix:hidden');
+                $header = $xpath->query('//ix:header//ix:hidden');
 
-            foreach ($header as $nodeList) {
-                foreach ($nodeList->childNodes as $childNode) {
-                    if ($date) break;
+                foreach ($header as $nodeList) {
+                    foreach ($nodeList->childNodes as $childNode) {
+                        if ($date) break;
 
-                    foreach ($childNode->attributes as $attribute) {
-                        if ($attribute->nodeName == 'contextRef') {
-                            $refName = $attribute->nodeValue;
-                        }
+                        foreach ($childNode->attributes as $attribute) {
+                            if ($attribute->nodeName == 'contextRef') {
+                                $refName = $attribute->nodeValue;
+                            }
 
-                        if ($attribute->nodeName == 'name' 
-                            && strpos($attribute->nodeValue, ':EndDateForPeriodCoveredByReport') !== false) {
-                            $date = $childNode->nodeValue;
+                            if ($attribute->nodeName == 'name'
+                                && strpos($attribute->nodeValue, ':EndDateForPeriodCoveredByReport') !== false) {
+                                $date = $childNode->nodeValue;
 
-                            break;
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            $nodeList = $xpath->query('//xbrli:context[@id="'.$refName.'"]//xbrli:instant');
+                $nodeList = $xpath->query('//xbrli:context[@id="'.$refName.'"]//xbrli:instant');
 
-            foreach ($nodeList as $item) {
-                $date = $item->nodeValue;
-            }
-
-            $assets = $xpath->query('//ix:nonFraction[@contextRef="'.$refName.'"]');
-
-            foreach ($assets as $asset) {
-                $name = $asset->getAttribute('name');
-
-                if (strpos($name, ':FixedAssets') !== false && $fixed_asset === 0) {
-                    $fixed_asset = $this->getAssetValue($asset);
-                } elseif (strpos($name, ':CurrentAssets') !== false && $current_asset === 0) {
-                    $current_asset = $this->getAssetValue($asset);
-                } elseif (strpos($name, ':NetCurrentAssetsLiabilities') !== false && $liabilities === 0) {
-                    $liabilities = $this->getAssetValue($asset);
+                foreach ($nodeList as $item) {
+                    $date = $item->nodeValue;
                 }
-            }
 
-            if ($fixed_asset === 0 && $current_asset === 0 && $liabilities === 0) {
-                $assets = $xpath->query('//ix:nonFraction');
+                $assets = $xpath->query('//ix:nonFraction[@contextRef="'.$refName.'"]');
 
                 foreach ($assets as $asset) {
                     $name = $asset->getAttribute('name');
@@ -176,9 +162,27 @@ class CompaniesHouseService
                         $liabilities = $this->getAssetValue($asset);
                     }
                 }
-            }
 
-            $this->curl->closeCurl($ch);
+                if ($fixed_asset === 0 && $current_asset === 0 && $liabilities === 0) {
+                    $assets = $xpath->query('//ix:nonFraction');
+
+                    foreach ($assets as $asset) {
+                        $name = $asset->getAttribute('name');
+
+                        if (strpos($name, ':FixedAssets') !== false && $fixed_asset === 0) {
+                            $fixed_asset = $this->getAssetValue($asset);
+                        } elseif (strpos($name, ':CurrentAssets') !== false && $current_asset === 0) {
+                            $current_asset = $this->getAssetValue($asset);
+                        } elseif (strpos($name, ':NetCurrentAssetsLiabilities') !== false && $liabilities === 0) {
+                            $liabilities = $this->getAssetValue($asset);
+                        }
+                    }
+                }
+
+                $this->curl->closeCurl($ch);
+            }
+        } catch (\Exception $e) {
+            return false;
         }
 
         return [
